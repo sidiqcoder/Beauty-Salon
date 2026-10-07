@@ -1,10 +1,12 @@
 import { Booking } from "@/types/salon";
-import { formatRupiah } from "@/lib/utils";
+import { formatRupiah, calculateEndTime } from "@/lib/utils";
 
 export function generateWhatsAppBookingUrl(booking: Booking, branchWhatsAppNumber: string): string {
   const serviceList = booking.selectedServices
     .map((s) => `  - ${s.name} (${s.durationMinutes} mnt)`)
     .join("\n");
+
+  const endTime = calculateEndTime(booking.timeSlot, booking.totalDurationMinutes);
 
   const text = `Halo *${booking.branchName}*,
 Saya telah melakukan reservasi online melalui website:
@@ -13,7 +15,7 @@ Saya telah melakukan reservasi online melalui website:
 👤 *Nama Pelanggan:* ${booking.customerName}
 📱 *No. WhatsApp:* ${booking.customerPhone}
 📅 *Tanggal:* ${booking.date}
-⏰ *Jam Janji Temu:* ${booking.timeSlot} WIB
+⏰ *Jam Janji Temu:* ${booking.timeSlot} – ${endTime} WIB (Durasi ${booking.totalDurationMinutes} mnt)
 ${booking.staffName ? `💇‍♀️ *Stylist/Terapis:* ${booking.staffName}\n` : ""}
 ✨ *Layanan Pilihan:*
 ${serviceList}

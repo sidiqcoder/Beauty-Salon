@@ -2,10 +2,13 @@
 
 import React from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Calendar, Phone, MessageCircle } from "lucide-react";
 
 export default function StickyActionRail() {
   const defaultWhatsAppNumber = "628118899011"; // Senopati
+  const pathname = usePathname();
+  const isBookingPage = pathname?.startsWith("/booking");
 
   return (
     <>
@@ -46,39 +49,41 @@ export default function StickyActionRail() {
         </a>
       </aside>
 
-      {/* Mobile Fixed Bottom Tab Bar */}
-      <nav 
-        aria-label="Mobile Navigation Bar" 
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#C9A96E]/20 shadow-2xl grid grid-cols-3 h-16 pb-[env(safe-area-inset-bottom)]"
-      >
-        <a
-          href="tel:+62217208899"
-          className="flex flex-col items-center justify-center gap-1 text-zinc-700 hover:text-[#C26B83] active:bg-zinc-100 transition"
+      {/* Mobile Fixed Bottom Tab Bar (hidden on /booking to prevent overlapping wizard buttons) */}
+      {!isBookingPage && (
+        <nav 
+          aria-label="Mobile Navigation Bar" 
+          className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#C9A96E]/20 shadow-2xl grid grid-cols-3 h-16 pb-[env(safe-area-inset-bottom)]"
         >
-          <Phone className="w-5 h-5 text-[#C26B83]" />
-          <span className="text-[10px] font-bold uppercase tracking-wider">Telepon</span>
-        </a>
+          <a
+            href="tel:+62217208899"
+            className="flex flex-col items-center justify-center gap-1 text-zinc-700 hover:text-[#C26B83] active:bg-zinc-100 transition"
+          >
+            <Phone className="w-5 h-5 text-[#C26B83]" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Telepon</span>
+          </a>
 
-        <a
-          href={`https://wa.me/${defaultWhatsAppNumber}?text=${encodeURIComponent(
-            "Halo Aura & Curls, saya ingin konsultasi janji temu."
-          )}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex flex-col items-center justify-center gap-1 bg-emerald-600 text-white active:bg-emerald-700 transition"
-        >
-          <MessageCircle className="w-5 h-5" />
-          <span className="text-[10px] font-bold uppercase tracking-wider">WhatsApp</span>
-        </a>
+          <a
+            href={`https://wa.me/${defaultWhatsAppNumber}?text=${encodeURIComponent(
+              "Halo Aura & Curls, saya ingin konsultasi janji temu."
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex flex-col items-center justify-center gap-1 bg-emerald-600 text-white active:bg-emerald-700 transition"
+          >
+            <MessageCircle className="w-5 h-5" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">WhatsApp</span>
+          </a>
 
-        <Link
-          href="/booking"
-          className="flex flex-col items-center justify-center gap-1 gold-gradient text-white active:opacity-90 transition"
-        >
-          <Calendar className="w-5 h-5" />
-          <span className="text-[10px] font-bold uppercase tracking-wider">Booking</span>
-        </Link>
-      </nav>
+          <Link
+            href="/booking"
+            className="flex flex-col items-center justify-center gap-1 gold-gradient text-white active:opacity-90 transition"
+          >
+            <Calendar className="w-5 h-5" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Booking</span>
+          </Link>
+        </nav>
+      )}
     </>
   );
 }

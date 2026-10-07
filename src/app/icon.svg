@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FAF1D8" />
+      <stop offset="40%" stop-color="#C9A96E" />
+      <stop offset="100%" stop-color="#85662A" />
+    </linearGradient>
+  </defs>
+  <!-- Rounded obsidian background -->
+  <rect width="64" height="64" rx="16" fill="#121214" />
+  <rect width="60" height="60" x="2" y="2" rx="14" fill="none" stroke="url(#goldGradient)" stroke-width="1.5" stroke-opacity="0.6" />
+  
+  <!-- Stylized Serif Monogram 'A' & Curl -->
+  <path d="M32 14 L20 48 L26 48 L29 39 L35 39 L38 48 L44 48 Z M32 23 L34 34 L30 34 Z" fill="url(#goldGradient)" />
+  
+  <!-- Subtle luxury sparkle star -->
+  <path d="M45 15 C45 18 47 20 50 20 C47 20 45 22 45 25 C45 22 43 20 40 20 C43 20 45 18 45 15 Z" fill="#FAF1D8" />
+</svg>
+

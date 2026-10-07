@@ -37,7 +37,7 @@ import {
   PaymentMethod, 
   Booking 
 } from "@/types/salon";
-import { formatRupiah } from "@/lib/utils";
+import { formatRupiah, calculateEndTime, validateIndonesianPhone } from "@/lib/utils";
 import { generateWhatsAppBookingUrl } from "@/lib/whatsapp";
 
 interface BookingWizardProps {
@@ -70,6 +70,11 @@ export default function BookingWizard({ initialBranchId, initialServiceId }: Boo
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
 
+  // Existing bookings for slot availability check
+  const [existingBookings, setExistingBookings] = useState<Booking[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState<boolean>(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
+
   // Submission state
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [createdBooking, setCreatedBooking] = useState<Booking | null>(null);
@@ -95,6 +100,31 @@ export default function BookingWizard({ initialBranchId, initialServiceId }: Boo
     }
   }, [selectedDate]);
 
+  // Fetch real-time existing bookings to avoid double-booking / slot conflicts
+  useEffect(() => {
+    if (!selectedBranchId || !selectedDate) return;
+    let isMounted = true;
+    setLoadingSlots(true);
+
+    fetch(`/api/bookings?branchId=${selectedBranchId}&date=${selectedDate}`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (isMounted && json.success) {
+          setExistingBookings(json.data || []);
+        }
+      })
+      .catch((err) => {
+        console.error("Gagal memuat jadwal terisi:", err);
+      })
+      .finally(() => {
+        if (isMounted) setLoadingSlots(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedBranchId, selectedDate]);
+
   // Selected Branch object
   const currentBranch = BRANCHES.find((b) => b.id === selectedBranchId) || BRANCHES[0];
 
@@ -105,12 +135,48 @@ export default function BookingWizard({ initialBranchId, initialServiceId }: Boo
   const totalAmount = selectedServices.reduce((sum, s) => sum + s.price, 0);
   const totalDuration = selectedServices.reduce((sum, s) => sum + s.durationMinutes, 0);
 
+  // Check if a time slot is available
+  const getSlotStatus = (time: string) => {
+    const activeBookingsAtTime = existingBookings.filter(
+      (b) => b.timeSlot === time && b.status !== "CANCELLED"
+    );
+
+    if (selectedStaffId !== "any") {
+      const isStaffBooked = activeBookingsAtTime.some((b) => b.staffId === selectedStaffId);
+      if (isStaffBooked) {
+        return { isAvailable: false, label: "Stylist Sibuk" };
+      }
+    } else {
+      const branchCapacity = Math.max(availableStaff.length, 2);
+      if (activeBookingsAtTime.length >= branchCapacity) {
+        return { isAvailable: false, label: "Penuh" };
+      }
+      if (activeBookingsAtTime.length > 0) {
+        return { 
+          isAvailable: true, 
+          label: `Tersisa ${branchCapacity - activeBookingsAtTime.length} Slot` 
+        };
+      }
+    }
+
+    return { isAvailable: true, label: null };
+  };
+
   // Toggle service selection
   const handleToggleService = (service: ServiceItem) => {
     if (selectedServices.some((s) => s.id === service.id)) {
       setSelectedServices(selectedServices.filter((s) => s.id !== service.id));
     } else {
       setSelectedServices([...selectedServices, service]);
+    }
+  };
+
+  // Handle phone input changes with instant validation
+  const handlePhoneChange = (val: string) => {
+    setCustomerPhone(val);
+    if (phoneError) {
+      const check = validateIndonesianPhone(val);
+      if (check.isValid) setPhoneError(null);
     }
   };
 
@@ -127,10 +193,17 @@ export default function BookingWizard({ initialBranchId, initialServiceId }: Boo
 
   // Handle final submission
   const handleSubmitBooking = async () => {
-    if (!customerName.trim() || !customerPhone.trim()) {
-      alert("Mohon lengkapi nama dan nomor WhatsApp Anda.");
+    if (!customerName.trim()) {
+      alert("Mohon masukkan nama lengkap Anda.");
       return;
     }
+
+    const phoneValidation = validateIndonesianPhone(customerPhone);
+    if (!phoneValidation.isValid) {
+      setPhoneError(phoneValidation.message || "Nomor WhatsApp tidak valid.");
+      return;
+    }
+    setPhoneError(null);
 
     setIsSubmitting(true);
     try {
@@ -560,28 +633,75 @@ export default function BookingWizard({ initialBranchId, initialServiceId }: Boo
 
             {/* Available Time Slots */}
             <div>
-              <label className="text-xs font-bold uppercase tracking-wider text-zinc-700 block mb-2">
-                Pilih Jam Janji Temu:
-              </label>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                  Pilih Jam Janji Temu:
+                </label>
+                {loadingSlots && (
+                  <span className="text-[11px] text-[#85662A] animate-pulse">
+                    Memeriksa ketersediaan slot...
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
                 {AVAILABLE_TIME_SLOTS.map((time) => {
                   const isSelected = selectedTimeSlot === time;
+                  const slotStatus = getSlotStatus(time);
+                  const isFull = !slotStatus.isAvailable;
+
                   return (
                     <button
                       key={time}
                       type="button"
+                      disabled={isFull}
                       onClick={() => setSelectedTimeSlot(time)}
-                      className={`py-3 px-2 rounded-xl text-xs font-bold transition-all border ${
-                        isSelected
+                      className={`relative py-3 px-2 rounded-xl text-xs font-bold transition-all border flex flex-col items-center justify-center min-h-[58px] ${
+                        isFull
+                          ? "bg-zinc-100 text-zinc-400 border-zinc-200 cursor-not-allowed opacity-60"
+                          : isSelected
                           ? "gold-gradient text-white border-transparent shadow-md scale-105"
                           : "bg-white text-zinc-800 border-zinc-200 hover:border-[#C9A96E]"
                       }`}
                     >
-                      {time} WIB
+                      <span className="text-xs">{time} WIB</span>
+                      {isFull ? (
+                        <span className="text-[9px] font-semibold text-rose-500 mt-0.5 tracking-tight">
+                          {slotStatus.label}
+                        </span>
+                      ) : slotStatus.label ? (
+                        <span
+                          className={`text-[9px] mt-0.5 font-medium tracking-tight ${
+                            isSelected ? "text-amber-100" : "text-amber-600"
+                          }`}
+                        >
+                          {slotStatus.label}
+                        </span>
+                      ) : (
+                        <span className="text-[9px] opacity-60 mt-0.5 font-normal">Tersedia</span>
+                      )}
                     </button>
                   );
                 })}
               </div>
+
+              {/* Real-time Estimated Finish Banner */}
+              {selectedTimeSlot && (
+                <div className="mt-4 bg-[#FAF7F2] p-4 rounded-2xl border border-[#C9A96E]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-[#85662A]" />
+                    <span className="text-zinc-700 font-medium">Estimasi Durasi Perawatan:</span>
+                  </div>
+                  <div className="text-left sm:text-right">
+                    <span className="font-serif font-bold text-sm text-[#85662A]">
+                      {selectedTimeSlot} – {calculateEndTime(selectedTimeSlot, totalDuration)} WIB
+                    </span>
+                    <span className="text-[11px] text-zinc-500 block">
+                      (Total {totalDuration} menit pengerjaan menyeluruh)
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="pt-6 flex justify-between">
@@ -645,14 +765,25 @@ export default function BookingWizard({ initialBranchId, initialServiceId }: Boo
                       type="tel"
                       placeholder="Contoh: 081234567890"
                       value={customerPhone}
-                      onChange={(e) => setCustomerPhone(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-zinc-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#C9A96E]"
+                      onChange={(e) => handlePhoneChange(e.target.value)}
+                      className={`w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 ${
+                        phoneError
+                          ? "border-rose-400 focus:ring-rose-400 bg-rose-50/20"
+                          : "border-zinc-300 focus:ring-[#C9A96E]"
+                      }`}
                       required
                     />
                   </div>
-                  <p className="text-[11px] text-zinc-500 mt-1">
-                    *Notifikasi dan link konfirmasi reservasi akan dikirim ke nomor ini
-                  </p>
+                  {phoneError ? (
+                    <p className="text-xs text-rose-600 mt-1 flex items-center gap-1 font-medium">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{phoneError}</span>
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-zinc-500 mt-1">
+                      *Notifikasi dan link konfirmasi reservasi akan dikirim ke nomor WhatsApp ini (08... / 628...)
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -771,8 +902,14 @@ export default function BookingWizard({ initialBranchId, initialServiceId }: Boo
                       <strong className="text-zinc-900">{selectedDate}</strong>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-zinc-500">Jam:</span>
-                      <strong className="text-zinc-900">{selectedTimeSlot} WIB</strong>
+                      <span className="text-zinc-500">Waktu Treatment:</span>
+                      <strong className="text-zinc-900">
+                        {selectedTimeSlot} – {calculateEndTime(selectedTimeSlot, totalDuration)} WIB
+                      </strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-500">Estimasi Durasi:</span>
+                      <strong className="text-[#85662A] font-semibold">{totalDuration} Menit</strong>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-zinc-500">Stylist:</span>
@@ -874,7 +1011,10 @@ export default function BookingWizard({ initialBranchId, initialServiceId }: Boo
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-500">Jadwal:</span>
-                  <strong>{createdBooking.date} • {createdBooking.timeSlot} WIB</strong>
+                  <strong>
+                    {createdBooking.date} • {createdBooking.timeSlot} –{" "}
+                    {calculateEndTime(createdBooking.timeSlot, createdBooking.totalDurationMinutes)} WIB
+                  </strong>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-zinc-500">Stylist:</span>

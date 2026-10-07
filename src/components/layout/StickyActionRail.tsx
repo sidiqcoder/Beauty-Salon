@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { Calendar, Phone, MessageCircle } from "lucide-react";
 
 export default function StickyActionRail() {
-  const defaultWhatsAppNumber = "628118899011"; // Senopati
+  const defaultWhatsAppNumber = "6285217288084"; // WhatsApp Utama Aura & Curls
   const pathname = usePathname();
   const isBookingPage = pathname?.startsWith("/booking");
 

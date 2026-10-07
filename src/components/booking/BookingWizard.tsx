@@ -1030,15 +1030,20 @@ export default function BookingWizard({ initialBranchId, initialServiceId }: Boo
             {/* Action buttons */}
             <div className="max-w-md mx-auto space-y-3">
               {/* WhatsApp Bridge Button (Matching Blush N Curls) */}
-              <a
-                href={generateWhatsAppBookingUrl(createdBooking, currentBranch.whatsapp)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full bg-[#15803D] hover:bg-[#166534] text-white py-4 rounded-full font-bold text-sm shadow-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition"
-              >
-                <MessageCircle className="w-5 h-5" />
-                <span>Kirim Konfirmasi ke WhatsApp Cabang</span>
-              </a>
+              <div className="space-y-1.5">
+                <a
+                  href={generateWhatsAppBookingUrl(createdBooking, currentBranch.whatsapp || "6285217288084")}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full bg-[#15803D] hover:bg-[#166534] text-white py-4 rounded-full font-bold text-sm shadow-xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition"
+                >
+                  <MessageCircle className="w-5 h-5" />
+                  <span>Kirim Konfirmasi ke WhatsApp Cabang</span>
+                </a>
+                <p className="text-[11px] text-zinc-500 text-center">
+                  *Terhubung langsung ke WhatsApp Official Salon (+62 852-1728-8084)
+                </p>
+              </div>
 
               <div className="flex gap-3">
                 <button

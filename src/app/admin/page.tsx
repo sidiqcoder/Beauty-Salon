@@ -32,6 +32,7 @@ import {
 import { BRANCHES, SERVICES, STAFF_MEMBERS } from "@/data/salon-data";
 import { Booking, AppointmentStatus, BranchId, ServiceItem } from "@/types/salon";
 import { formatRupiah, calculateEndTime } from "@/lib/utils";
+import { generateStaffToCustomerWhatsAppUrl } from "@/lib/whatsapp";
 
 export default function AdminPage() {
   // Security PIN lock state
@@ -735,9 +736,9 @@ export default function AdminPage() {
                         {/* Actions */}
                         <td className="py-4 px-4 align-top text-right">
                           <div className="flex flex-col items-end gap-1.5">
-                            {/* WhatsApp Direct Chat */}
+                            {/* WhatsApp Direct Chat with Formatted Template */}
                             <a
-                              href={`https://wa.me/${cleanPhone}?text=${waText}`}
+                              href={generateStaffToCustomerWhatsAppUrl(b)}
                               target="_blank"
                               rel="noreferrer"
                               className="px-2.5 py-1 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[10px] flex items-center gap-1 shadow-sm transition"

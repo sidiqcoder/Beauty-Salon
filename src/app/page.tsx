@@ -224,7 +224,7 @@ export default function HomePage() {
               </Link>
 
               <a
-                href="https://wa.me/628118899011?text=Halo%20Aura%20Salon,%20saya%20ingin%20konsultasi%20jadwal"
+                href="https://wa.me/6285217288084?text=Halo%20Aura%20Salon,%20saya%20ingin%20konsultasi%20jadwal%20perawatan."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="bg-white/10 hover:bg-white/20 text-white border border-white/20 px-8 py-4 rounded-full font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition"

@@ -28,7 +28,7 @@ export default function VoucherPage() {
 Mohon info rekening pembayaran untuk penerbitan e-voucher resmi ya. Terima kasih! 🙏`;
 
     const encoded = encodeURIComponent(text);
-    window.open(`https://wa.me/628118899011?text=${encoded}`, "_blank");
+    window.open(`https://wa.me/6285217288084?text=${encoded}`, "_blank");
   };
 
   return (
